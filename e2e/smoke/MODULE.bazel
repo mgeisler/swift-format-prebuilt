@@ -1,0 +1,7 @@
+bazel_dep(name = "swift_format_prebuilt", version = "603.0.0")
+local_path_override(
+    module_name = "swift_format_prebuilt",
+    path = "../..",
+)
+
+bazel_dep(name = "rules_shell", version = "0.8.0")

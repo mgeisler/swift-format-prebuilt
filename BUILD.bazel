@@ -1,0 +1,48 @@
+# Host-platform swift-format binary. Consumers depend on this repo
+# with
+#
+#   bazel_dep(name = "swift_format_prebuilt", version = "...")
+#
+# and reference @swift_format_prebuilt//:swift-format (runnable via
+# `bazel run`, and usable as a tool/data dependency).
+#
+# macOS Apple Silicon resolves to @platforms//cpu:arm64 and Linux ARM
+# to @platforms//cpu:aarch64 (this is what @platforms//host produces
+# on each host).
+
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+
+config_setting(
+    name = "linux_x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "linux_aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "macos_arm64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+native_binary(
+    name = "swift-format",
+    src = select({
+        ":linux_x86_64": "@swift_format_linux_x86_64//:swift-format",
+        ":linux_aarch64": "@swift_format_linux_aarch64//:swift-format",
+        ":macos_arm64": "@swift_format_macos_arm64//:swift-format",
+    }),
+    out = "swift-format",
+    visibility = ["//visibility:public"],
+)

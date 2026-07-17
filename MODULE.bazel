@@ -1,0 +1,22 @@
+module(
+    name = "swift_format_prebuilt",
+    # Tracks the swift-format release this module packages. See
+    # extensions.bzl (SWIFT_FORMAT_VERSION) and
+    # .github/workflows/release.yml.
+    version = "603.0.0",
+    compatibility_level = 1,
+    # Minimum Bazel for consumers. bzlmod + module extensions are
+    # stable from 7.
+    bazel_compatibility = [">=7.0.0"],
+)
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+
+swift_format = use_extension("//:extensions.bzl", "swift_format")
+use_repo(
+    swift_format,
+    "swift_format_linux_aarch64",
+    "swift_format_linux_x86_64",
+    "swift_format_macos_arm64",
+)

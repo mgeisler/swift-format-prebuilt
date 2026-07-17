@@ -1,0 +1,12 @@
+{
+  "homepage": "https://github.com/mgeisler/swift-format-prebuilt",
+  "maintainers": [
+    {
+      "name": "Martin Geisler",
+      "github": "mgeisler"
+    }
+  ],
+  "repository": ["github:mgeisler/swift-format-prebuilt"],
+  "versions": [],
+  "yanked_versions": {}
+}

@@ -1,0 +1,11 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+# Runs the packaged binary on the host so BCR presubmit proves it actually
+# executes on each platform, not just that it downloads.
+sh_test(
+    name = "version_test",
+    srcs = ["version_test.sh"],
+    args = ["$(rlocationpath @swift_format_prebuilt//:swift-format)"],
+    data = ["@swift_format_prebuilt//:swift-format"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

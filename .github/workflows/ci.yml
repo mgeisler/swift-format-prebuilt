@@ -1,0 +1,75 @@
+# Proves the binaries still build on every PR (and on main), by
+# building the swift-format version this module currently targets. The
+# release workflow reuses the same build steps and adds publishing on
+# top.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Build the version the module targets, read from source, so a PR
+  # that bumps SWIFT_FORMAT_VERSION actually exercises the new
+  # version.
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read swift-format version from extensions.bzl
+        id: read
+        run: |
+          version="$(grep '^SWIFT_FORMAT_VERSION = ' extensions.bzl | cut -d'"' -f2)"
+          echo "Building swift-format $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  # Bazel integration test: runs the module's swift-format on a sample
+  # file, against the freshly-built binary.
+  integration:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            slug: linux-x86_64
+            repo: swift_format_linux_x86_64
+          - runner: ubuntu-24.04-arm
+            slug: linux-aarch64
+            repo: swift_format_linux_aarch64
+          - runner: macos-14
+            slug: macos-arm64
+            repo: swift_format_macos_arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bazel-contrib/setup-bazel@0.9.1
+      - name: Download built binary
+        uses: actions/download-artifact@v4
+        with:
+          name: swift-format-${{ matrix.slug }}
+          path: artifact
+      - name: Assemble local repo from the artifact
+        run: |
+          mkdir -p override
+          tar -C override -xzf artifact/swift-format-*.tar.gz
+          chmod +x override/swift-format
+          echo 'exports_files(["swift-format"])' > override/BUILD.bazel
+          touch override/REPO.bazel
+      - name: Run swift-format via Bazel on a sample file
+        run: |
+          bazel run //:swift-format --override_repo=${{ matrix.repo }}="$PWD/override" -- --version
+          bazel run //:swift-format --override_repo=${{ matrix.repo }}="$PWD/override" -- format "$PWD/testdata/sample.swift" >/dev/null
